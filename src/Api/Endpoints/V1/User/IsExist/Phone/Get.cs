@@ -11,6 +11,7 @@ public class Get : IEndpoint
     {
         var isExist = await uniqueKeyRepository.GetAsync(phone, UniqueKeyType.Phone, cancellationToken) != null;
         return Results.Ok(isExist);
+        
     }
 
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
