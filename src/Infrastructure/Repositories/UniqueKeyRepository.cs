@@ -28,4 +28,27 @@ public class UniqueKeyRepository : DynamoRepository, IUniqueKeyRepository
     {
         return await base.DeleteAsync($"uniqueData#{keyType}", key, cancellationToken);
     }
+
+    public async Task<string> FormatMobilePhone(string phone, CancellationToken cancellationToken = default)
+    {
+        if (phone.StartsWith("+90"))
+        {
+            return phone;
+        }
+        // Eğer numara 90 ile başlıyorsa, +90 ekle
+        else if (phone.StartsWith("90"))
+        {
+            return "+" + phone;
+        }
+        // Eğer numara 0 ile başlıyorsa, 0'ı kaldır ve +90 ekle
+        else if (phone.StartsWith("0"))
+        {
+            return "+90" + phone.Substring(1);
+        }
+        // Diğer durumlar için +90 ekle
+        else
+        {
+            return "+90" + phone;
+        }
+    }
 }

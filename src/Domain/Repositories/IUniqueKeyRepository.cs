@@ -10,4 +10,6 @@ public interface IUniqueKeyRepository
     Task<bool> SaveAsync(UniqueKeyEntity entity, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteAsync(string key, UniqueKeyType keyType, CancellationToken cancellationToken = default);
+    Task<string> FormatMobilePhone(string phone, CancellationToken cancellationToken = default);
+
 }

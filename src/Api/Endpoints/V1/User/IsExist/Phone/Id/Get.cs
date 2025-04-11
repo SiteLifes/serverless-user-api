@@ -9,6 +9,7 @@ public class Get : IEndpoint
 {
     private static async Task<IResult> Handler([FromQuery] string phone, [FromServices] IUniqueKeyRepository uniqueKeyRepository, CancellationToken cancellationToken)
     {
+        phone = await uniqueKeyRepository.FormatMobilePhone(phone, cancellationToken);
         var value = await uniqueKeyRepository.GetAsync(phone, UniqueKeyType.Phone, cancellationToken);
         if (value == null)
             return Results.NotFound();
