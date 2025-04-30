@@ -142,6 +142,8 @@ builder.Services.AddLocalization();
 var option = builder.Configuration.GetAWSOptions();
 builder.Services.AddDefaultAWSOptions(option);
 
+_ = typeof(Api.Endpoints.V1.User.Device.GetPaged).Assembly;
+
 var app = builder.Build();
 
 var localizationOptions = app.Services.GetService<IOptions<RequestLocalizationOptions>>();

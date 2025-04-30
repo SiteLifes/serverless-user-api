@@ -34,20 +34,20 @@ public class UserDeviceRepository : DynamoRepository, IUserDeviceRepository
         if (device == null)
             return true;
 
-        var response = await DeleteAsync($"userDevices#{userId}#", deviceId, cancellationToken);
+        var response = await DeleteAsync($"userDevices#{userId}", deviceId, cancellationToken);
         await _eventBusManager.DeviceRemovedAsync(device, cancellationToken);
         return response;
     }
 
     public async Task<(List<UserDeviceEntity>, string)> GetUserDevicesPagedAsync(string userId, int limit, string? nextToken, CancellationToken cancellationToken = default)
     {
-        var (entities, token, _) = await GetPagedAsync<UserDeviceEntity>($"userDevices#{userId}#", nextToken, limit, cancellationToken);
+        var (entities, token, _) = await GetPagedAsync<UserDeviceEntity>($"userDevices#{userId}", nextToken, limit, cancellationToken);
         return (entities, token);
     }
 
     public async Task<bool> DeleteUserDevicesAsync(string userId, CancellationToken cancellationToken)
     {
-        var entities = await GetAllAsync<UserDeviceEntity>($"userDevices#{userId}#", cancellationToken);
+        var entities = await GetAllAsync<UserDeviceEntity>($"userDevices#{userId}", cancellationToken);
         if (entities.Count == 0)
             return true;
         await BatchWriteAsync(new List<IEntity>(), new List<IEntity>(entities), cancellationToken);

@@ -7,7 +7,8 @@ namespace Api.Endpoints.V1.User.Me.Device;
 
 public class Delete : IEndpoint
 {
-    private static async Task<IResult> Handler([FromRoute] string deviceId,
+    private static async Task<IResult> Handler(
+        [FromRoute] string deviceId,
         [FromServices] IApiContext apiContext,
         [FromServices] IUserDeviceRepository userDeviceRepository,
         CancellationToken cancellationToken)
