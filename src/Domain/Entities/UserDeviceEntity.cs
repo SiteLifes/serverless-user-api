@@ -10,7 +10,7 @@ public class UserDeviceEntity : IEntity
     [JsonPropertyName("id")] public string Id { get; set; } = default!;
     [JsonPropertyName("userId")] public string UserId { get; set; } = default!;
     [JsonPropertyName("platform")] public string? Platform { get; set; }
-    [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
     [JsonPropertyName("additionalData")] public Dictionary<string, string> AdditionalData { get; set; } = new();
     
     public static string GetPk(string userId)

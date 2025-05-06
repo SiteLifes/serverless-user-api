@@ -19,7 +19,8 @@ public class Put : IEndpoint
         var userDevice = await userDeviceRepository.GetUserDeviceAsync(id, deviceId, cancellationToken) ?? new UserDeviceEntity
         {
             Id = deviceId,
-            UserId = id
+            UserId = id,
+            CreatedAt = DateTime.UtcNow,
         };
 
         userDevice.Platform = request.Platform;
