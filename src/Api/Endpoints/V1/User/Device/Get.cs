@@ -12,8 +12,8 @@ public class Get : IEndpoint
         [FromServices] IUserDeviceRepository userDeviceRepository,
         CancellationToken cancellationToken)
     {
-        var (userDevices, token) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1, null, cancellationToken);
-        var deviceId = userDevices.FirstOrDefault().Id;
+        var (userDevices, token) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1000, null, cancellationToken);
+        var deviceId = userDevices.OrderByDescending(x=> x.CreatedAt).FirstOrDefault().Id;
         return Results.Ok(deviceId);
     }
 
