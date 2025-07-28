@@ -3,27 +3,26 @@ using Domain.Dto;
 using Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Endpoints.V1.User.Device;
+namespace Api.Endpoints.V1.User.Phone;
 
 public class Get : IEndpoint
 {
     private static async Task<IResult> Handler(
         [FromRoute] string id,
-        [FromServices] IUserDeviceRepository userDeviceRepository,
+        [FromServices] IUserRepository repository,
         CancellationToken cancellationToken)
     {
-        var (userDevices, token) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1000, null, cancellationToken);
+        var user = await repository.GetAsync(id, cancellationToken);
         
-        if (userDevices == null)
+        if (user == null)
             return Results.NotFound();
         
-        var deviceId = userDevices.OrderByDescending(x=> x.CreatedAt).FirstOrDefault().Id;
-        return Results.Ok(deviceId);
+        return Results.Ok(user.Phone);
     }
 
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("v1/users/{id}/device", Handler)
+        endpoints.MapGet("v1/users/{id}/phone", Handler)
             .Produces<string>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
