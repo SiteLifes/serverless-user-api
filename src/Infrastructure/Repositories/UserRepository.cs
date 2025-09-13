@@ -15,8 +15,10 @@ public class UserRepository : DynamoRepository, IUserRepository
         _eventBusManager = eventBusManager;
     }
 
-    protected override string GetTableName() => "users";
-
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
 
     public async Task<UserEntity?> GetAsync(string userId, CancellationToken cancellationToken = default)
     {

@@ -55,5 +55,7 @@ public class UserDeviceRepository : DynamoRepository, IUserDeviceRepository
     }
 
 
-    protected override string GetTableName() => "users";
-}
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }}

@@ -32,6 +32,9 @@ public class LookupRepository : DynamoRepository, ILookupRepository
         return await base.GetAllAsync<LookupDefinitionEntity>(LookupDefinitionEntity.GetPk(), cancellationToken);
     }
 
-
-    protected override string GetTableName() => "users";
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
+    
 }

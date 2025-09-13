@@ -12,8 +12,10 @@ public class ReasonRepository : DynamoRepository, IReasonRepository
     {
     }
 
-    protected override string GetTableName() => "users";
-
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
     public async Task<List<ReasonLookupEntity>> GetReasonLookupAsync(ReasonType type, CancellationToken cancellationToken)
     {
         return await GetAllAsync<ReasonLookupEntity>(ReasonLookupEntity.GetPk(type), cancellationToken);

@@ -12,8 +12,10 @@ public class UniqueKeyRepository : DynamoRepository, IUniqueKeyRepository
     {
     }
 
-    protected override string GetTableName() => "users";
-
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
     public async Task<UniqueKeyEntity?> GetAsync(string key, UniqueKeyType keyType, CancellationToken cancellationToken = default)
     {
         return await GetAsync<UniqueKeyEntity>($"uniqueData#{keyType}", key, cancellationToken);

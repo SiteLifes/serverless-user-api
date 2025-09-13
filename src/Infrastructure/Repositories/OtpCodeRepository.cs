@@ -17,8 +17,10 @@ public class OtpCodeRepository : DynamoRepository, IOtpCodeRepository
         _otpSettingsOptions = otpSettingsOptions;
     }
 
-    protected override string GetTableName() => "users";
-
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
 
     public async Task<bool> CheckOtpCodeAsync(string otpCode, string userId, UniqueKeyType keyType, CancellationToken cancellationToken = default)
     {

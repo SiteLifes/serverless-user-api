@@ -11,8 +11,10 @@ public class UserReportRepository : DynamoRepository, IUserReportRepository
     {
     }
 
-    protected override string GetTableName() => "users";
-
+    protected override string GetTableName()
+    {
+        return GetEnvironmentTableName("users");
+    }
     public async Task<bool> SaveAsync(string reporter, string reported, string? reason, CancellationToken cancellationToken = default)
     {
         var entity = new UserReportEntity

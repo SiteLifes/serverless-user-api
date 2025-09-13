@@ -308,6 +308,18 @@ public abstract class DynamoRepository
         return (result, HttpUtility.UrlEncode(lastKeyEvaluated), response.Count);
     }
 
+    protected string GetEnvironmentTableName(string baseTableName)
+    {
+        // Lambda veya ortam değişkeninden kontrol et
+        var environment = Environment.GetEnvironmentVariable("ENVIRONMENT"); // örn: "prod" veya "test"
+
+        if (!string.IsNullOrEmpty(environment) && environment.ToLower() == "test")
+        {
+            return baseTableName + "-test";
+        }
+
+        return baseTableName; // prod
+    }
 
     protected abstract string GetTableName();
 }
