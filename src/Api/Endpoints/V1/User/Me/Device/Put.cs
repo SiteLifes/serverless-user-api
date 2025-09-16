@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.JavaScript;
 using Api.Infrastructure.Context;
 using Api.Infrastructure.Contract;
 using Domain.Entities;
@@ -18,7 +19,8 @@ public class Put : IEndpoint
         var userDevice = await userDeviceRepository.GetUserDeviceAsync(apiContext.CurrentUserId, deviceId, cancellationToken) ?? new UserDeviceEntity
         {
             Id = deviceId,
-            UserId = apiContext.CurrentUserId
+            UserId = apiContext.CurrentUserId,
+            CreatedAt = DateTime.UtcNow
         };
 
         userDevice.Platform = request.Platform;
