@@ -20,8 +20,6 @@ public class Put : IEndpoint
         {
             Id = deviceId,
             UserId = apiContext.CurrentUserId,
-            CreatedAt = DateTime.UtcNow,
-            ModifiedAt = DateTime.UtcNow
         };
 
         userDevice.Platform = request.Platform;
