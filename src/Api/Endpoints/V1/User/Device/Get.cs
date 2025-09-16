@@ -17,7 +17,7 @@ public class Get : IEndpoint
         if (userDevices == null)
             return Results.NotFound();
         
-        var deviceId = userDevices.OrderByDescending(x=> x.CreatedAt).FirstOrDefault().Id;
+        var deviceId = userDevices.OrderByDescending(x=> x.ModifiedAt).FirstOrDefault().Id;
         return Results.Ok(deviceId);
     }
 

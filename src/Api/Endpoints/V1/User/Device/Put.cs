@@ -21,10 +21,13 @@ public class Put : IEndpoint
             Id = deviceId,
             UserId = id,
             CreatedAt = DateTime.UtcNow,
+            ModifiedAt = DateTime.UtcNow
         };
 
         userDevice.Platform = request.Platform;
         userDevice.AdditionalData = request.AdditionalData;
+        userDevice.ModifiedAt = DateTime.UtcNow;
+        
         await userDeviceRepository.SaveUserDeviceAsync(userDevice, cancellationToken);
         return Results.Ok();
     }

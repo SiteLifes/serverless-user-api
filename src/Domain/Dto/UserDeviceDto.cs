@@ -8,6 +8,7 @@ public class UserDeviceDto
     public string UserId { get; set; } = default!;
     public string? Platform { get; set; }
     public DateTime ? CreatedAt { get; set; }
+    public DateTime ? ModifiedAt { get; set; }
 
     public Dictionary<string, string> AdditionalData { get; set; } = new();
 }
@@ -22,7 +23,8 @@ public static class UserDeviceDtoMapper
             AdditionalData = entity.AdditionalData,
             UserId = entity.UserId,
             Id = entity.Id,
-            CreatedAt = entity.CreatedAt
+            CreatedAt = entity.CreatedAt,
+            ModifiedAt = entity.ModifiedAt
         };
     }
 }
