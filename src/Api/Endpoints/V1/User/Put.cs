@@ -31,8 +31,9 @@ public class Put : IEndpoint
             logger.LogWarning("Invalid request. {ValidationResult}, {Request}", validationResult, request);
             return Results.ValidationProblem(validationResult.ToDictionary());
         }
-            
 
+        request.Phone = request.Phone.Replace("+90", "");
+        
         var utcNow = DateTime.UtcNow;
         var user = await userRepository.GetAsync(id, cancellationToken);
         var oldUser = user;
@@ -53,7 +54,7 @@ public class Put : IEndpoint
             var verificationResult =
                 await identityVerificationService.VerifyByAvatarAsync(user, user.SelfieUrl, cancellationToken);
             isVerified = verificationResult;
-            if(!verificationResult)
+            if (!verificationResult)
                 await eventBusManager.LostVerifiedAsync(user.Id, cancellationToken);
         }
 
