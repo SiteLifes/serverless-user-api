@@ -24,7 +24,7 @@ public class Post : IEndpoint
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("v1/users/phones/GetAllByIds", Handler)
-            .Produces<string>()
+            .Produces<List<string>>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
