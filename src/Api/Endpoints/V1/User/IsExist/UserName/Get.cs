@@ -1,4 +1,5 @@
 using Api.Infrastructure.Contract;
+using Api.Infrastructure.Auth;
 using Domain.Enums;
 using Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +8,41 @@ namespace Api.Endpoints.V1.User.IsExist.UserName;
 
 public class Get : IEndpoint
 {
-    private static async Task<IResult> Handler([FromQuery] string userName, [FromServices] IUniqueKeyRepository uniqueKeyRepository, CancellationToken cancellationToken)
+    private static async Task<IResult> Handler(
+        [FromQuery] string userName,
+        HttpContext httpContext,
+        [FromServices] IUniqueKeyRepository uniqueKeyRepository,
+        [FromServices] IUserAccessValidator userAccessValidator,
+        CancellationToken cancellationToken)
     {
-        var isExist = await uniqueKeyRepository.GetAsync(userName, UniqueKeyType.UserName, cancellationToken) != null;
-        return Results.Ok(isExist);
+        if (string.IsNullOrWhiteSpace(userName))
+            return Results.BadRequest();
+
+        var normalizedUserName = userName.Trim();
+        var value = await uniqueKeyRepository.GetAsync(normalizedUserName, UniqueKeyType.UserName, cancellationToken);
+
+        if (userAccessValidator.IsInternalCaller(httpContext))
+            return Results.Ok(value != null);
+
+        if (!userAccessValidator.TryGetRequesterUserId(httpContext, out var requesterUserId))
+            return Results.Unauthorized();
+
+        if (value == null)
+            return Results.NotFound();
+
+        // Hide existence of other users from non-internal callers.
+        if (!userAccessValidator.IsSelf(requesterUserId, value.UserId))
+            return Results.NotFound();
+
+        return Results.Ok(true);
     }
 
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/v1/users/username/check", Handler)
             .Produces<bool>()
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status500InternalServerError)
             .WithTags("User");

@@ -6,6 +6,7 @@ using Amazon.Extensions.NETCore.Setup;
 using Amazon.Rekognition;
 using Amazon.SimpleNotificationService;
 using Api.Extensions;
+using Api.Infrastructure.Auth;
 using Api.Infrastructure.Context;
 using Api.Infrastructure.Middleware;
 using Domain.Options;
@@ -44,6 +45,7 @@ builder.Services.Configure<UniqueKeySettings>(builder.Configuration.GetSection("
 builder.Services.Configure<UserVerificationSettings>(builder.Configuration.GetSection("UserVerificationSettings"));
 builder.Services.Configure<EventBusSettings>(builder.Configuration.GetSection("EventBusSettings"));
 builder.Services.Configure<ApiKeyValidationSettings>(builder.Configuration.GetSection("ApiKeyValidationSettings"));
+builder.Services.Configure<InternalServiceAuthSettings>(builder.Configuration.GetSection("InternalServiceAuth"));
 builder.Services.Configure<VerificationS3Settings>(builder.Configuration.GetSection("VerificationS3Settings"));
 builder.Services.Configure<OtpSettings>(builder.Configuration.GetSection("OtpSettings"));
 
@@ -77,6 +79,7 @@ builder.Services.AddScoped<IMailProvider, DummyEmailProvider>();
 builder.Services.AddScoped<IUserVerificationService, UserVerificationService>();
 builder.Services.AddScoped<IUserIdentityVerificationService, UserIdentityVerificationService>();
 builder.Services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
+builder.Services.AddScoped<IUserAccessValidator, UserAccessValidator>();
 builder.Services.AddScoped<ApiKeyValidatorMiddleware>();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

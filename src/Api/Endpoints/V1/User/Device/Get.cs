@@ -1,5 +1,5 @@
 using Api.Infrastructure.Contract;
-using Domain.Dto;
+using Api.Infrastructure.Auth;
 using Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,16 +9,22 @@ public class Get : IEndpoint
 {
     private static async Task<IResult> Handler(
         [FromRoute] string id,
+        HttpContext httpContext,
         [FromServices] IUserDeviceRepository userDeviceRepository,
+        [FromServices] IUserAccessValidator userAccessValidator,
         CancellationToken cancellationToken)
     {
-        var (userDevices, token) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1000, null, cancellationToken);
-        
-        if (userDevices == null)
+        var authorizationResult = userAccessValidator.AuthorizeInternalOrSelf(httpContext, id);
+        if (authorizationResult != null)
+            return authorizationResult;
+
+        var (userDevices, _) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1000, null, cancellationToken);
+
+        var latestDevice = userDevices.OrderByDescending(x => x.ModifiedAt).FirstOrDefault();
+        if (latestDevice == null)
             return Results.NotFound();
-        
-        var deviceId = userDevices.OrderByDescending(x=> x.ModifiedAt).FirstOrDefault().Id;
-        return Results.Ok(deviceId);
+
+        return Results.Ok(latestDevice.Id);
     }
 
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
@@ -26,7 +32,7 @@ public class Get : IEndpoint
         endpoints.MapGet("v1/users/{id}/device", Handler)
             .Produces<string>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithTags("User");
