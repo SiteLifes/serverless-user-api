@@ -7,21 +7,41 @@ namespace Api.Endpoints.V1.User.Device;
 
 public class Post : IEndpoint
 {
+    private const int MaxConcurrentDeviceQueries = 8;
+
     private static async Task<IResult> Handler(
         [FromBody] List<string> userIds,
         [FromServices] IUserDeviceRepository userDeviceRepository,
         CancellationToken cancellationToken)
     {
-        List<string> deviceIds = new List<string>();
-        foreach (var id in userIds)
-        {
-            var (userDevices, token) = await userDeviceRepository.GetUserDevicesPagedAsync(id, 1000, null, cancellationToken);
-            if (userDevices == null || userDevices.Count < 1)
-                continue;
-            deviceIds.Add(userDevices.OrderByDescending(x => x.ModifiedAt).FirstOrDefault().Id);
-        }
+        var uniqueUserIds = userIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToArray();
+        var deviceIds = new string?[uniqueUserIds.Length];
 
-        return Results.Ok(deviceIds);
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, uniqueUserIds.Length),
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxConcurrentDeviceQueries,
+                CancellationToken = cancellationToken
+            },
+            async (index, token) =>
+            {
+                var (userDevices, _) = await userDeviceRepository.GetUserDevicesPagedAsync(
+                    uniqueUserIds[index],
+                    1000,
+                    null,
+                    token);
+
+                deviceIds[index] = userDevices?
+                    .OrderByDescending(device => device.ModifiedAt)
+                    .FirstOrDefault()?
+                    .Id;
+            });
+
+        return Results.Ok(deviceIds.OfType<string>().ToList());
     }
 
     public void MapEndpoint(IEndpointRouteBuilder endpoints)
