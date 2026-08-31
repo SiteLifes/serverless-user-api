@@ -9,6 +9,9 @@ namespace Api.Endpoints.V1.Staff.Users;
 /// <summary>
 /// Every user in the system, a page at a time, for the internal staff panel.
 ///
+/// With `search` it is the users whose name matches instead — same page shape and same token, so
+/// the panel pages through a search exactly as it pages through the full list.
+///
 /// The gateway already restricts this to staff tokens; the check here is the second lock, so the
 /// endpoint is not open to anything that reaches the service by another route.
 /// </summary>
@@ -20,6 +23,7 @@ public class GetPaged : IEndpoint
     private static async Task<IResult> Handler(
         [FromQuery] int? limit,
         [FromQuery] string? nextToken,
+        [FromQuery] string? search,
         [FromServices] IApiContext apiContext,
         [FromServices] IUserRepository userRepository,
         CancellationToken cancellationToken)
@@ -28,6 +32,23 @@ public class GetPaged : IEndpoint
             return Results.Forbid();
 
         var pageSize = Math.Clamp(limit ?? DefaultLimit, 1, MaxLimit);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var (matches, nextSk) = await userRepository.SearchByNameAsync(
+                search,
+                pageSize,
+                PageToken.SkForRepository(nextToken),
+                cancellationToken);
+
+            return Results.Ok(new PagedResponse<UserDto>
+            {
+                Data = matches.Select(user => user.ToDto()).ToList(),
+                Limit = pageSize,
+                NextToken = PageToken.FromSk(nextSk),
+                PreviousToken = nextToken
+            });
+        }
 
         var (users, token) = await userRepository.GetPagedAsync(
             pageSize,

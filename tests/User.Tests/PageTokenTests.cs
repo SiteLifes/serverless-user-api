@@ -119,4 +119,32 @@ public class PageTokenTests
         Assert.Equal(sk, key!["sk"].S);
     }
 
+    [Theory]
+    [InlineData("44aae00c-2997-40a4-b558-d38179b1d31d")]
+    [InlineData("boşluklu anahtar")]
+    [InlineData("a+b")]
+    public void A_search_cursor_round_trips_through_the_same_token(string sk)
+    {
+        // Name search pages by user id alone, but through the token the plain listing uses, so the
+        // panel carries one kind of token whichever way it is reading the list.
+        Assert.Equal(sk, PageToken.SkForRepository(PageToken.FromSk(sk)));
+    }
+
+    [Fact]
+    public void No_search_cursor_means_no_token()
+    {
+        Assert.Null(PageToken.FromSk(null));
+        Assert.Null(PageToken.FromSk(" "));
+        Assert.Null(PageToken.SkForRepository("not-a-token"));
+    }
+
+    [Fact]
+    public void A_listing_token_can_be_read_as_a_search_cursor()
+    {
+        // The panel hands back whatever token it was given; switching from the full list to a
+        // search reuses it rather than failing on it.
+        var token = PageToken.ForClient(RepositoryToken("users", "user-42"));
+
+        Assert.Equal("user-42", PageToken.SkForRepository(token));
+    }
 }

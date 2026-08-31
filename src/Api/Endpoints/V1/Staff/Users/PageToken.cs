@@ -19,6 +19,9 @@ public static class PageToken
 {
     private sealed record Key(string Pk, string Sk);
 
+    /// <summary>Every user lives in one partition, so a token built here already knows its pk.</summary>
+    private const string UsersPk = "users";
+
     /// <summary>Repository token to something the client can hand back. Null when there is no next page.</summary>
     public static string? ForClient(string? repositoryToken)
     {
@@ -54,22 +57,46 @@ public static class PageToken
     /// </summary>
     public static string? ForRepository(string? clientToken)
     {
+        var key = Read(clientToken);
+
+        if (key is null)
+            return null;
+
+        return JsonSerializer.Serialize(new Dictionary<string, Dictionary<string, string>>
+        {
+            ["pk"] = new() { ["S"] = key.Pk },
+            ["sk"] = new() { ["S"] = key.Sk }
+        });
+    }
+
+    /// <summary>
+    /// The user id a name search should carry on after, read out of a client token.
+    ///
+    /// Search pages by sort key alone — the partition is fixed — so it needs the id rather than the
+    /// whole key, but it travels in the same token as the plain listing's so a client never has to
+    /// tell the two apart.
+    /// </summary>
+    public static string? SkForRepository(string? clientToken) => Read(clientToken)?.Sk;
+
+    /// <summary>A client token that resumes after a user id. Null when there is nothing more to read.</summary>
+    public static string? FromSk(string? sk)
+    {
+        if (string.IsNullOrWhiteSpace(sk))
+            return null;
+
+        return Base64Url(JsonSerializer.SerializeToUtf8Bytes(new Key(UsersPk, sk)));
+    }
+
+    private static Key? Read(string? clientToken)
+    {
         if (string.IsNullOrWhiteSpace(clientToken))
             return null;
 
         try
         {
-            var payload = FromBase64Url(clientToken);
-            var key = JsonSerializer.Deserialize<Key>(payload);
+            var key = JsonSerializer.Deserialize<Key>(FromBase64Url(clientToken));
 
-            if (key is null || string.IsNullOrEmpty(key.Pk) || string.IsNullOrEmpty(key.Sk))
-                return null;
-
-            return JsonSerializer.Serialize(new Dictionary<string, Dictionary<string, string>>
-            {
-                ["pk"] = new() { ["S"] = key.Pk },
-                ["sk"] = new() { ["S"] = key.Sk }
-            });
+            return key is null || string.IsNullOrEmpty(key.Pk) || string.IsNullOrEmpty(key.Sk) ? null : key;
         }
         catch (Exception exception) when (exception is JsonException or FormatException)
         {

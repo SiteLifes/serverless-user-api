@@ -308,6 +308,51 @@ public abstract class DynamoRepository
         return (result, HttpUtility.UrlEncode(lastKeyEvaluated), response.Count);
     }
 
+    /// <summary>
+    /// One page of a partition, with the continuation given as the sort key of the last item
+    /// DynamoDB read rather than a serialized key.
+    ///
+    /// The other paging methods hand back the whole LastEvaluatedKey as JSON, which cannot be fed
+    /// straight back in — the AttributeValue carries fields DynamoDB rejects on the way in. A
+    /// partition whose sort key is the item id needs nothing more than that id to resume, so this
+    /// builds the start key itself and callers pass a plain string around.
+    /// </summary>
+    protected async Task<(List<T> entities, string? lastSk)> QueryPageAsync<T>(string pk, string? afterSk, int limit, CancellationToken cancellationToken)
+    {
+        var request = new QueryRequest
+        {
+            TableName = GetTableName(),
+            KeyConditionExpression = "pk = :v_pk",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                {":v_pk", new AttributeValue {S = pk}}
+            },
+            ScanIndexForward = false,
+            Limit = limit
+        };
+
+        if (!string.IsNullOrEmpty(afterSk))
+        {
+            request.ExclusiveStartKey = new Dictionary<string, AttributeValue>
+            {
+                {"pk", new AttributeValue {S = pk}},
+                {"sk", new AttributeValue {S = afterSk}}
+            };
+        }
+
+        var response = await _dynamoDb.QueryAsync(request, cancellationToken);
+
+        var entities = response.Items.Select(item => item.ToEntity<T>()).ToList();
+
+        // An empty last evaluated key is DynamoDB saying the partition is exhausted; anything else
+        // means there is more behind this page, even when the page came back short.
+        var lastSk = response.LastEvaluatedKey is {Count: > 0} key && key.TryGetValue("sk", out var sk)
+            ? sk.S
+            : null;
+
+        return (entities, lastSk);
+    }
+
     protected string GetEnvironmentTableName(string baseTableName)
     {
         // Lambda veya ortam değişkeninden kontrol et
