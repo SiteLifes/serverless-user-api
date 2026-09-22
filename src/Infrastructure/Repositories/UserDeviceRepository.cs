@@ -1,18 +1,22 @@
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
 using Domain.Entities;
 using Domain.Entities.Base;
 using Domain.Repositories;
 using Domain.Services;
+using Infrastructure.Extensions;
 using Infrastructure.Repositories.Base;
 
 namespace Infrastructure.Repositories;
 
 public class UserDeviceRepository : DynamoRepository, IUserDeviceRepository
 {
+    private readonly IAmazonDynamoDB _dynamoDb;
     private readonly IEventBusManager _eventBusManager;
 
     public UserDeviceRepository(IAmazonDynamoDB dynamoDb, IEventBusManager eventBusManager) : base(dynamoDb)
     {
+        _dynamoDb = dynamoDb;
         _eventBusManager = eventBusManager;
     }
 
@@ -54,6 +58,40 @@ public class UserDeviceRepository : DynamoRepository, IUserDeviceRepository
         return true;
     }
 
+
+    public async Task<List<UserDeviceEntity>> GetAllDevicePlatformsAsync(CancellationToken cancellationToken)
+    {
+        var devices = new List<UserDeviceEntity>();
+        Dictionary<string, AttributeValue>? lastEvaluatedKey = null;
+
+        do
+        {
+            var response = await _dynamoDb.ScanAsync(new ScanRequest
+            {
+                TableName = GetTableName(),
+                FilterExpression = "begins_with(#pk, :prefix)",
+                ProjectionExpression = "#userId, #platform, #createdAt, #modifiedAt",
+                ExpressionAttributeNames = new Dictionary<string, string>
+                {
+                    ["#pk"] = "pk",
+                    ["#userId"] = "userId",
+                    ["#platform"] = "platform",
+                    ["#createdAt"] = "createdAt",
+                    ["#modifiedAt"] = "modifiedAt"
+                },
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                {
+                    [":prefix"] = new() { S = "userDevices#" }
+                },
+                ExclusiveStartKey = lastEvaluatedKey
+            }, cancellationToken);
+
+            devices.AddRange(response.Items.Select(item => item.ToEntity<UserDeviceEntity>()));
+            lastEvaluatedKey = response.LastEvaluatedKey;
+        } while (lastEvaluatedKey is { Count: > 0 });
+
+        return devices;
+    }
 
     protected override string GetTableName()
     {

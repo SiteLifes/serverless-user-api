@@ -1,4 +1,5 @@
 using Api.Infrastructure.Contract;
+using Api.Infrastructure.Auth;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Options;
@@ -21,8 +22,10 @@ public class Put : IEndpoint
         [FromServices] IUserVerificationService userVerificationService,
         [FromServices] IUserIdentityVerificationService identityVerificationService,
         [FromServices] IValidator<UserPutRequest> validator,
+        [FromServices] IUserAccessValidator userAccessValidator,
         [FromServices] IEventBusManager eventBusManager,
         [FromServices] ILogger<Put> logger,
+        HttpContext httpContext,
         CancellationToken cancellationToken)
     {
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -77,7 +80,9 @@ public class Put : IEndpoint
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
             EmailIsValid = false,
-            PhoneIsValid = false
+            PhoneIsValid = isRegisterState
+                ? request.PhoneVerifiedByOtp && userAccessValidator.IsInternalCaller(httpContext)
+                : oldUser!.PhoneIsValid && string.Equals(oldUser.Phone, request.Phone, StringComparison.Ordinal)
         };
 
         user.UpdatedAt = utcNow;
@@ -213,6 +218,7 @@ public class UserPutRequest
     public string LastName { get; set; } = default!;
     public string? Email { get; set; }
     public string? Phone { get; set; }
+    public bool PhoneVerifiedByOtp { get; set; }
     public string? AvatarUrl { get; set; }
     public string? Gender { get; set; }
     public DateTime? BirthDate { get; set; }

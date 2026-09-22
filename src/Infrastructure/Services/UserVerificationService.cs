@@ -46,7 +46,7 @@ public class UserVerificationService : IUserVerificationService
             await SendMailOtpCodeAsync(user, cancellationToken);
         }
 
-        if (_userVerificationSettingsOptions.Value.PhoneShouldVerifyOnRegister)
+        if (_userVerificationSettingsOptions.Value.PhoneShouldVerifyOnRegister && !user.PhoneIsValid)
         {
             await SendSmsOtpCodeAsync(user, cancellationToken);
         }
