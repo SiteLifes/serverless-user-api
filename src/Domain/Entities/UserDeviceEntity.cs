@@ -10,8 +10,10 @@ public class UserDeviceEntity : IEntity
     [JsonPropertyName("id")] public string Id { get; set; } = default!;
     [JsonPropertyName("userId")] public string UserId { get; set; } = default!;
     [JsonPropertyName("platform")] public string? Platform { get; set; }
-    [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [JsonPropertyName("modifiedAt")] public DateTime ? ModifiedAt { get; set; } = DateTime.UtcNow;
+    // Legacy device rows predate these timestamps. Keep them null when DynamoDB has no value so
+    // reading an old row cannot manufacture a registration date from the current clock.
+    [JsonPropertyName("createdAt")] public DateTime? CreatedAt { get; set; }
+    [JsonPropertyName("modifiedAt")] public DateTime? ModifiedAt { get; set; }
     [JsonPropertyName("additionalData")] public Dictionary<string, string> AdditionalData { get; set; } = new();
     
     public static string GetPk(string userId)

@@ -16,15 +16,17 @@ public class Put : IEndpoint
         [FromServices] IEventBusManager eventBusManager,
         CancellationToken cancellationToken)
     {
+        var utcNow = DateTime.UtcNow;
         var userDevice = await userDeviceRepository.GetUserDeviceAsync(id, deviceId, cancellationToken) ?? new UserDeviceEntity
         {
             Id = deviceId,
             UserId = id,
+            CreatedAt = utcNow
         };
 
         userDevice.Platform = request.Platform;
         userDevice.AdditionalData = request.AdditionalData;
-        userDevice.ModifiedAt = DateTime.UtcNow;
+        userDevice.ModifiedAt = utcNow;
         
         await userDeviceRepository.SaveUserDeviceAsync(userDevice, cancellationToken);
         return Results.Ok();
