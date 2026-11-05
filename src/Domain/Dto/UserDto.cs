@@ -13,6 +13,7 @@ public class UserDto
     public string? AvatarUrl { get; set; }
     public string? Gender { get; set; }
     public DateTime? BirthDate { get; set; }
+    public string? IdentityNumber { get; set; }
     public string Status { get; set; } = default!;
     public bool EmailIsValid { get; set; }
     public bool PhoneIsValid { get; set; }
@@ -37,6 +38,7 @@ public static class UserDtoMapper
             UserName = dto.UserName,
             AvatarUrl = dto.AvatarUrl,
             BirthDate = dto.BirthDate,
+            IdentityNumber = dto.IdentityNumber,
             DefaultLanguage = dto.DefaultLanguage,
             EmailIsValid = dto.EmailIsValid,
             FirstName = dto.FirstName,
@@ -61,6 +63,7 @@ public static class UserDtoMapper
             UserName = entity.UserName,
             AvatarUrl = entity.AvatarUrl,
             BirthDate = entity.BirthDate,
+            IdentityNumber = entity.IdentityNumber,
             DefaultLanguage = entity.DefaultLanguage,
             EmailIsValid = entity.EmailIsValid,
             FirstName = entity.FirstName,

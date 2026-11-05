@@ -5,6 +5,7 @@ using Domain.Entities;
 using Domain.Enums;
 using Domain.Options;
 using Domain.Repositories;
+using Domain.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -16,7 +17,7 @@ namespace Api.Endpoints.V1.Staff.Users;
 ///
 /// Deliberately narrow. The resident-facing update rebuilds the whole record — it is the register
 /// form as much as an edit — and sending a user through it from the back office would reset their
-/// verification state and their phone. This one reads the record, changes three fields and writes
+/// verification state and their phone. This one reads the record, changes those few fields (name, email, T.C. no) and writes
 /// it back, so everything else survives a correction to a misspelt name.
 ///
 /// The gateway restricts this to admin staff tokens; the check here is the second lock, so the
@@ -66,6 +67,8 @@ public class Put : IEndpoint
         user.FirstName = request.FirstName.Trim();
         user.LastName = request.LastName.Trim();
         user.Email = email;
+        if (request.IdentityNumber != null)
+            user.IdentityNumber = TurkishIdentityNumber.Normalize(request.IdentityNumber);
         user.UpdatedAt = DateTime.UtcNow;
 
         // A new address has not been confirmed by whoever owns it, whatever the old one's state was.
@@ -122,6 +125,9 @@ public class StaffUserUpdateRequest
     /// <summary>Empty clears the address: some users have none, and staff must be able to say so.</summary>
     public string? Email { get; set; }
 
+    /// <summary>İsteğe bağlı T.C. kimlik no. Null: dokunma (eski istemciler); boş: sil.</summary>
+    public string? IdentityNumber { get; set; }
+
     public class StaffUserUpdateRequestValidator : AbstractValidator<StaffUserUpdateRequest>
     {
         public StaffUserUpdateRequestValidator()
@@ -132,6 +138,10 @@ public class StaffUserUpdateRequest
                 .EmailAddress()
                 .MaximumLength(200)
                 .When(request => !string.IsNullOrWhiteSpace(request.Email));
+            RuleFor(request => request.IdentityNumber)
+                .Must(value => TurkishIdentityNumber.IsValid(TurkishIdentityNumber.Normalize(value)))
+                .When(request => !string.IsNullOrWhiteSpace(request.IdentityNumber))
+                .WithMessage("Geçerli bir T.C. kimlik numarası giriniz.");
         }
     }
 }

@@ -21,6 +21,19 @@ public class UniqueKeyRepository : DynamoRepository, IUniqueKeyRepository
         return await GetAsync<UniqueKeyEntity>($"uniqueData#{keyType}", key, cancellationToken);
     }
 
+    public async Task<List<UniqueKeyEntity>> GetManyAsync(
+        IReadOnlyCollection<string> keys,
+        UniqueKeyType keyType,
+        CancellationToken cancellationToken = default)
+    {
+        var entities = keys
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.Ordinal)
+            .Select(key => new UniqueKeyEntity { Value = key, Type = keyType })
+            .ToList();
+        return await BatchGetAsync(entities, cancellationToken);
+    }
+
     public async Task<bool> SaveAsync(UniqueKeyEntity entity, CancellationToken cancellationToken = default)
     {
         return await base.SaveAsync(entity, cancellationToken);

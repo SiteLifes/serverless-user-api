@@ -38,6 +38,9 @@ public class Stats : IEndpoint
         if (request?.UserIds is { Count: > MaxUserIds })
             return Results.BadRequest($"userIds must not contain more than {MaxUserIds} ids");
 
+        if (request?.ExcludeUserIds is { Count: > MaxUserIds })
+            return Results.BadRequest($"excludeUserIds must not contain more than {MaxUserIds} ids");
+
         var source = await cache.GetOrCreateAsync(CacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
@@ -48,7 +51,12 @@ public class Stats : IEndpoint
             return new StatsSource((await usersTask).ToList(), await devicesTask);
         });
 
-        var result = UserStats.Build(source!.Users, source.Devices, request?.UserIds, DateTime.UtcNow);
+        var result = UserStats.Build(
+            source!.Users,
+            source.Devices,
+            request?.UserIds,
+            DateTime.UtcNow,
+            request?.ExcludeUserIds);
         return Results.Ok(result);
     }
 
@@ -63,7 +71,8 @@ public class Stats : IEndpoint
     }
 
     /// <param name="UserIds">Verilirse yalnız bu kullanıcılar sayılıyor; boş liste "kimse" demek.</param>
-    public sealed record UserStatsRequest(List<string>? UserIds);
+    /// <param name="ExcludeUserIds">Toplamdan çıkarılacaklar (ör. yalnız test sitelerinde olanlar).</param>
+    public sealed record UserStatsRequest(List<string>? UserIds, List<string>? ExcludeUserIds = null);
 
     private sealed record StatsSource(List<UserEntity> Users, List<UserDeviceEntity> Devices);
 }

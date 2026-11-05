@@ -43,7 +43,8 @@ public static class UserStats
         IEnumerable<UserEntity> users,
         IEnumerable<UserDeviceEntity> devices,
         IReadOnlyCollection<string>? onlyUserIds,
-        DateTime utcNow)
+        DateTime utcNow,
+        IReadOnlyCollection<string>? excludeUserIds = null)
     {
         var platformByUser = devices
             .Where(device => !string.IsNullOrWhiteSpace(device.UserId))
@@ -60,9 +61,14 @@ public static class UserStats
             ? null
             : new HashSet<string>(onlyUserIds, StringComparer.OrdinalIgnoreCase);
 
+        HashSet<string>? excluded = excludeUserIds is { Count: > 0 }
+            ? new HashSet<string>(excludeUserIds, StringComparer.OrdinalIgnoreCase)
+            : null;
+
         var rows = users
             .Where(user => !string.IsNullOrWhiteSpace(user.Id))
             .Where(user => filter is null || filter.Contains(user.Id))
+            .Where(user => excluded is null || !excluded.Contains(user.Id))
             .Select(user => (
                 Month: MonthOf(user.CreatedAt),
                 Platform: platformByUser.GetValueOrDefault(user.Id, UserPlatform.None)))

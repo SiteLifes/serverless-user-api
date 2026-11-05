@@ -167,29 +167,44 @@ public abstract class DynamoRepository
             return result;
         }
 
-        var keysAndAttributes = new KeysAndAttributes();
-        foreach (var entity in entities)
-        {
-            keysAndAttributes.Keys.Add(entity.ToKeyAttributeMap());
-        }
-
         var tableName = GetTableName();
 
-        var batchGetRequest = new BatchGetItemRequest
-        {
-            RequestItems = new Dictionary<string, KeysAndAttributes> {{tableName, keysAndAttributes}}
-        };
+        // BatchGetItem takes at most 100 keys, rejects duplicate keys and may hand back
+        // UnprocessedKeys under load; reads are consistent so a record written just before
+        // (e.g. a freshly added manager) is not missing from the list.
+        var keys = entities
+            .Select(entity => entity.ToKeyAttributeMap())
+            .DistinctBy(key => string.Join("|", key.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value.S}")))
+            .ToList();
 
-        var response = await _dynamoDb.BatchGetItemAsync(batchGetRequest, cancellationToken);
-        if (response.HttpStatusCode != HttpStatusCode.OK)
+        foreach (var chunk in keys.Chunk(100))
         {
-            return result;
-        }
+            var requestItems = new Dictionary<string, KeysAndAttributes>
+            {
+                { tableName, new KeysAndAttributes { Keys = chunk.ToList(), ConsistentRead = true } }
+            };
 
-        var responseList = response.Responses[tableName];
-        foreach (var dict in responseList)
-        {
-            result.Add(dict.ToEntity<T>());
+            for (var attempt = 0; requestItems.Count > 0 && attempt < 5; attempt++)
+            {
+                if (attempt > 0)
+                {
+                    await Task.Delay(50 * (1 << attempt), cancellationToken);
+                }
+
+                var response = await _dynamoDb.BatchGetItemAsync(
+                    new BatchGetItemRequest { RequestItems = requestItems }, cancellationToken);
+                if (response.HttpStatusCode != HttpStatusCode.OK)
+                {
+                    return result;
+                }
+
+                if (response.Responses.TryGetValue(tableName, out var responseList))
+                {
+                    result.AddRange(responseList.Select(dict => dict.ToEntity<T>()));
+                }
+
+                requestItems = response.UnprocessedKeys ?? new Dictionary<string, KeysAndAttributes>();
+            }
         }
 
         return result;

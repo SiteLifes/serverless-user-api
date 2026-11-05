@@ -17,6 +17,8 @@ public class UserEntity : IEntity
     [JsonPropertyName("selfieUrl")] public string? SelfieUrl { get; set; }
     [JsonPropertyName("gender")] public string? Gender { get; set; }
     [JsonPropertyName("birthDate")] public DateTime? BirthDate { get; set; }
+    /// <summary>T.C. kimlik numarası. İsteğe bağlı; yoksa null.</summary>
+    [JsonPropertyName("identityNumber")] public string? IdentityNumber { get; set; }
     [JsonPropertyName("status")] public string Status { get; set; } = default!;
     [JsonPropertyName("emailIsValid")] public bool EmailIsValid { get; set; }
     [JsonPropertyName("phoneIsValid")] public bool PhoneIsValid { get; set; }

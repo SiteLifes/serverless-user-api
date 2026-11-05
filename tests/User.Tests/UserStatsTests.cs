@@ -89,4 +89,13 @@ public class UserStatsTests
         Assert.Equal(2, result.Total);
         Assert.Equal("2026-03", Assert.Single(result.Months).Month);
     }
+
+    [Fact]
+    public void Build_LeavesOutExcludedUsers()
+    {
+        var result = UserStats.Build([User("a", Now), User("b", Now)], [], null, Now, ["b"]);
+
+        Assert.Equal(1, result.Total);
+    }
+
 }

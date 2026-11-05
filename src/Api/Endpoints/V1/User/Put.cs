@@ -66,6 +66,11 @@ public class Put : IEndpoint
             Email = request.Email,
             Gender = request.Gender,
             BirthDate = request.BirthDate,
+            // Bu uç kaydı baştan kurar ve onu çağıran yerlerin çoğu TC'yi bilmez. Gönderilmeyen (null)
+            // alan eskisini korur; boş metin bilerek silmektir.
+            IdentityNumber = request.IdentityNumber == null
+                ? oldUser?.IdentityNumber
+                : TurkishIdentityNumber.Normalize(request.IdentityNumber),
             AdditionalData = request.AdditionalData,
             SettingsData = request.SettingsData,
             DefaultLanguage = request.DefaultLanguage,
@@ -222,6 +227,10 @@ public class UserPutRequest
     public string? AvatarUrl { get; set; }
     public string? Gender { get; set; }
     public DateTime? BirthDate { get; set; }
+
+    /// <summary>İsteğe bağlı T.C. kimlik no. Null: dokunma; boş: sil; dolu: 11 hane, geçerli olmalı.</summary>
+    public string? IdentityNumber { get; set; }
+
     public string Status { get; set; } = default!;
     public bool IsVerified { get; set; }
     public string? DefaultLanguage { get; set; }
@@ -233,6 +242,10 @@ public class UserPutRequest
         public UserPutRequestValidator()
         {
             RuleFor(q => q.FirstName).NotEmpty();
+            RuleFor(q => q.IdentityNumber)
+                .Must(value => TurkishIdentityNumber.IsValid(TurkishIdentityNumber.Normalize(value)))
+                .When(q => !string.IsNullOrWhiteSpace(q.IdentityNumber))
+                .WithMessage("Geçerli bir T.C. kimlik numarası giriniz.");
         }
     }
 }
